@@ -1,0 +1,911 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+
+
+/* =========================================================
+   ROOT
+========================================================= */
+
+:root {
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.3);
+
+  --accent: #00bfff;
+
+  --font-main: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+
+  --header-h: 56px;
+}
+
+
+/* =========================================================
+   DARK THEME
+========================================================= */
+
+[data-theme="dark"] {
+  --bg-base: #0d0d12;
+  --bg-surface: #14141c;
+  --bg-elevated: #1c1c28;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --border-focus: rgba(0, 191, 255, 0.6);
+
+  --text-primary: #e8f4ff;
+  --text-secondary: #7aadcc;
+
+  --glass-bg: rgba(10, 22, 30, 0.85);
+  --glass-border: rgba(0, 191, 255, 0.12);
+
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  --canvas-bg: #060c10;
+  --canvas-dot: rgba(0, 191, 255, 0.08);
+}
+
+
+/* =========================================================
+   LIGHT THEME
+========================================================= */
+
+[data-theme="light"] {
+  --bg-base: #f4f7fa;
+  --bg-surface: #ffffff;
+  --bg-elevated: #e8eef5;
+
+  --border: rgba(0, 0, 0, 0.1);
+  --border-focus: rgba(0, 191, 255, 0.8);
+
+  --text-primary: #0a1620;
+  --text-secondary: #3d6b7f;
+
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 191, 255, 0.15);
+
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  --canvas-bg: #eaeff5;
+  --canvas-dot: rgba(0, 0, 0, 0.08);
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+
+  overflow: hidden;
+  user-select: none;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.app-header {
+  height: var(--header-h);
+
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+
+  border-bottom: 1px solid var(--border);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 1.5rem;
+
+  position: relative;
+  z-index: 100;
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-left {
+  min-width: 0;
+}
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.2rem;
+
+  color: var(--accent);
+
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+
+  white-space: nowrap;
+}
+
+.logo-icon {
+  font-size: 1.1rem;
+}
+
+
+/* =========================================================
+   BOARD TITLE
+========================================================= */
+
+.board-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.board-title-input {
+  background: transparent;
+  border: 1px solid transparent;
+
+  color: var(--text-primary);
+
+  font-weight: 600;
+  font-size: 0.95rem;
+
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+
+  outline: none;
+}
+
+.board-title-input:hover,
+.board-title-input:focus {
+  border-color: var(--border-focus);
+}
+
+.edit-icon {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   VIEW TABS
+========================================================= */
+
+.view-tabs {
+  display: flex;
+  align-items: center;
+}
+
+.view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  background: transparent;
+  color: var(--text-secondary);
+
+  cursor: pointer;
+
+  transition:
+    background var(--transition),
+    color var(--transition),
+    border-color var(--transition);
+}
+
+.view-tab:hover,
+.view-tab.active {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: var(--border-focus);
+}
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+.settings-wrap {
+  position: relative;
+}
+
+.settings-dropdown {
+  position: absolute;
+
+  right: 0;
+  top: 45px;
+
+  background: var(--bg-surface);
+
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+
+  padding: 1rem;
+
+  width: 260px;
+
+  box-shadow: var(--shadow-lg);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  z-index: 200;
+}
+
+.settings-dropdown.hidden {
+  display: none;
+}
+
+.settings-dropdown h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: var(--text-secondary);
+}
+
+.color-picker-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 12px;
+
+  font-size: 0.8rem;
+}
+
+.color-picker-row label {
+  color: var(--text-primary);
+}
+
+.color-picker-row input[type="color"] {
+  border: none;
+
+  width: 32px;
+  height: 32px;
+
+  cursor: pointer;
+
+  background: transparent;
+}
+
+
+/* =========================================================
+   WELCOME MODAL
+========================================================= */
+
+.welcome-modal-backdrop {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.6);
+
+  backdrop-filter: blur(8px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 1000;
+
+  opacity: 1;
+  visibility: visible;
+
+  transition:
+    opacity var(--transition),
+    visibility var(--transition);
+}
+
+.welcome-modal-backdrop.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.welcome-modal-card {
+  width: min(420px, calc(100vw - 32px));
+
+  background: var(--bg-surface);
+
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+
+  padding: 2.5rem;
+
+  text-align: center;
+
+  box-shadow: var(--card-shadow);
+
+  position: relative;
+  z-index: 1001;
+}
+
+
+/* =========================================================
+   WELCOME CONTENT
+========================================================= */
+
+.wm-sparkle {
+  font-size: 2.5rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.wm-title {
+  font-family: var(--font-display);
+
+  font-size: 1.6rem;
+
+  margin-bottom: 0.5rem;
+}
+
+.wm-sub {
+  color: var(--text-secondary);
+
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  margin-bottom: 1.5rem;
+}
+
+.wm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.wm-btn {
+  padding: 0.6rem 1.2rem;
+
+  border-radius: var(--radius-md);
+
+  font-weight: 600;
+  font-family: inherit;
+
+  cursor: pointer;
+
+  border: none;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.5rem;
+
+  font-size: 0.85rem;
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+
+.wm-btn:hover {
+  transform: translateY(-1px);
+}
+
+.wm-btn:active {
+  transform: translateY(0);
+}
+
+.wm-btn-primary {
+  background: var(--accent);
+  color: #000;
+}
+
+.wm-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.wm-btn-ghost {
+  background: transparent;
+
+  color: var(--text-primary);
+
+  border: 1px solid var(--border);
+}
+
+.wm-btn-ghost:hover {
+  background: var(--bg-elevated);
+}
+
+
+/* =========================================================
+   ICON BUTTON
+========================================================= */
+
+.btn-icon {
+  background: transparent;
+
+  border: 1px solid var(--border);
+
+  color: var(--text-primary);
+
+  border-radius: var(--radius-md);
+
+  width: 36px;
+  height: 36px;
+
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    background var(--transition),
+    border-color var(--transition);
+}
+
+.btn-icon:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-focus);
+}
+
+
+/* =========================================================
+   CANVAS VIEWPORT
+========================================================= */
+
+.canvas-viewport {
+  width: 100vw;
+
+  height: calc(100vh - var(--header-h));
+
+  background-color: var(--canvas-bg);
+
+  background-image:
+    radial-gradient(
+      var(--canvas-dot) 1.5px,
+      transparent 1.5px
+    );
+
+  background-size: 24px 24px;
+
+  position: relative;
+
+  overflow: hidden;
+
+  cursor: grab;
+
+  touch-action: none;
+}
+
+.canvas-viewport:active {
+  cursor: grabbing;
+}
+
+
+/* =========================================================
+   LEFT TOOLS SIDEBAR
+========================================================= */
+
+.tools-sidebar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 78px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(14px);
+  z-index: 60;
+}
+
+.tools-kicker {
+  padding: 2px 0 5px;
+  color: var(--text-secondary);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.tool-button {
+  min-height: 58px;
+  padding: 7px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.tool-button:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.tool-button:active {
+  transform: translateY(0);
+}
+
+.tool-icon {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tool-shape-icon {
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+}
+
+.tool-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.tool-divider {
+  height: 1px;
+  margin: 2px 4px;
+  background: var(--border);
+}
+
+.tool-button-danger .tool-icon {
+  color: #ff6b7d;
+}
+
+.tool-button-danger:hover {
+  border-color: rgba(255, 107, 125, 0.45);
+  color: #ffd8de;
+}
+
+
+/* =========================================================
+   CANVAS WORLD
+========================================================= */
+
+.canvas-world {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 1px;
+  height: 1px;
+
+  transform-origin: 0 0;
+
+  pointer-events: auto;
+}
+
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.card-element {
+  position: absolute;
+
+  background: var(--bg-surface);
+
+  border-radius: var(--radius-md);
+
+  border: 2px solid transparent;
+
+  box-shadow: var(--card-shadow);
+
+  cursor: grab;
+
+  overflow: hidden;
+
+  box-sizing: border-box;
+
+  transition: border-color var(--transition);
+}
+
+.card-element:active {
+  cursor: grabbing;
+}
+
+.card-element.selected {
+  border-color: var(--accent);
+}
+
+.card-element.text-card {
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+.card-element.shape-card {
+  background: rgba(0, 191, 255, 0.18);
+  border: 2px solid var(--accent);
+}
+
+.text-content {
+  width: 100%;
+  height: 100%;
+  padding: 14px 18px;
+  outline: none;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.08;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: text;
+  user-select: text;
+}
+
+.text-content:focus {
+  border-radius: var(--radius-md);
+  background: rgba(0, 191, 255, 0.08);
+}
+
+.card-element img,
+.card-element video {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  display: block;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   VIDEO CONTROLS
+========================================================= */
+
+.video-controls {
+  position: absolute;
+
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  background: rgba(0, 0, 0, 0.75);
+
+  backdrop-filter: blur(4px);
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 6px 10px;
+
+  opacity: 0;
+
+  transition: opacity 0.2s ease;
+
+  z-index: 10;
+
+  pointer-events: none;
+}
+
+.card-element:hover .video-controls,
+.card-element.selected .video-controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.video-btn {
+  background: transparent;
+
+  border: none;
+
+  color: #fff;
+
+  cursor: pointer;
+
+  font-size: 12px;
+
+  padding: 2px 4px;
+}
+
+.video-volume {
+  width: 60px;
+
+  cursor: pointer;
+
+  accent-color: var(--accent);
+}
+
+
+/* =========================================================
+   RESIZE HANDLE
+========================================================= */
+
+.resize-handle {
+  position: absolute;
+
+  width: 12px;
+  height: 12px;
+
+  background: var(--accent);
+
+  border-radius: 50%;
+
+  bottom: 4px;
+  right: 4px;
+
+  cursor: se-resize;
+
+  z-index: 20;
+
+  opacity: 0;
+
+  transition: opacity 0.15s ease;
+}
+
+.card-element:hover .resize-handle,
+.card-element.selected .resize-handle {
+  opacity: 1;
+}
+
+
+/* =========================================================
+   DELETE BUTTON
+========================================================= */
+
+.card-delete-btn {
+  position: absolute;
+
+  top: 6px;
+  right: 6px;
+
+  background: rgba(255, 0, 0, 0.7);
+
+  color: white;
+
+  border: none;
+
+  border-radius: 50%;
+
+  width: 22px;
+  height: 22px;
+
+  cursor: pointer;
+
+  display: none;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+
+  z-index: 20;
+}
+
+.card-element:hover .card-delete-btn,
+.card-element.selected .card-delete-btn {
+  display: flex;
+}
+
+
+/* =========================================================
+   MARQUEE SELECTION
+========================================================= */
+
+.marquee-box {
+  position: absolute;
+
+  border: 1px solid var(--accent);
+
+  background: rgba(0, 191, 255, 0.15);
+
+  pointer-events: none;
+
+  z-index: 999;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 800px) {
+
+  .tools-sidebar {
+    top: 8px;
+    left: 8px;
+    width: 66px;
+    padding: 8px 5px;
+  }
+
+  .tool-button {
+    min-height: 52px;
+  }
+
+  .header-center {
+    display: none;
+  }
+
+  .board-title-wrap {
+    display: none;
+  }
+
+  .app-header {
+    padding: 0 0.75rem;
+  }
+
+  .header-right {
+    gap: 0.5rem;
+  }
+
+  .wm-btn {
+    padding: 0.55rem 0.8rem;
+  }
+
+  .welcome-modal-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .wm-actions {
+    flex-direction: column;
+  }
+
+}

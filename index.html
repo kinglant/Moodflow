@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>MoodFlow — Creative Moodboard</title>
+
+  <meta
+    name="description"
+    content="Canva-ga o'xshash moodboard — rasm, video va GIFlarni bir joyda saqlang."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- =====================================================
+       WELCOME MODAL
+  ====================================================== -->
+
+  <div
+    class="welcome-modal-backdrop"
+    id="welcome-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="welcome-title"
+  >
+    <div class="welcome-modal-card" id="welcome-card">
+
+      <div class="wm-sparkle">✦</div>
+
+      <h1 class="wm-title" id="welcome-title">
+        MoodFlow'ga xush kelibsiz!
+      </h1>
+
+      <p class="wm-sub">
+        Rasm, Video, GIFlarni bir joyga jamlang.<br />
+        Drag &amp; Drop yoki fayl tanlang.
+      </p>
+
+      <div class="wm-actions">
+
+        <button
+          type="button"
+          class="wm-btn wm-btn-primary"
+          id="wm-upload"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+
+          Fayl yuklash
+        </button>
+
+        <button
+          type="button"
+          class="wm-btn wm-btn-ghost"
+          id="wm-start"
+        >
+          Boshlash →
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+
+  <header class="app-header" id="app-header">
+
+    <div class="header-left">
+
+      <div class="logo">
+        <span class="logo-icon">✦</span>
+        <span class="logo-text">MoodFlow</span>
+      </div>
+
+      <div class="board-title-wrap">
+        <input
+          type="text"
+          id="board-title"
+          class="board-title-input"
+          value="Mening Moodboard'im"
+          spellcheck="false"
+          autocomplete="off"
+        />
+
+        <span class="edit-icon">✎</span>
+      </div>
+
+    </div>
+
+
+    <div class="header-center">
+
+      <div class="view-tabs">
+
+        <button
+          type="button"
+          class="view-tab active"
+          id="tab-canvas"
+          data-view="canvas"
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+
+          Canvas
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="header-right">
+
+      <!-- SETTINGS -->
+
+      <div class="settings-wrap">
+
+        <button
+          type="button"
+          class="btn-icon"
+          id="btn-settings"
+          title="Sozlamalar va Ranglar"
+          aria-label="Sozlamalar"
+        >
+          ⚙️
+        </button>
+
+        <div
+          class="settings-dropdown hidden"
+          id="settings-panel"
+        >
+
+          <h3>Sozlamalar (RGB Panel)</h3>
+
+          <div class="color-picker-row">
+            <label for="accent-color">
+              Asosiy Rang (Accent):
+            </label>
+
+            <input
+              type="color"
+              id="accent-color"
+              value="#00BFFF"
+            />
+          </div>
+
+          <div class="color-picker-row">
+            <label for="canvas-color">
+              Canvas Orqa Foni:
+            </label>
+
+            <input
+              type="color"
+              id="canvas-color"
+              value="#060C10"
+            />
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- THEME -->
+
+      <button
+        type="button"
+        class="btn-icon"
+        id="btn-theme"
+        title="Mavzuni o'zgartirish"
+        aria-label="Mavzuni o'zgartirish"
+      >
+        🌙
+      </button>
+
+
+      <!-- ADD FILE -->
+
+      <button
+        type="button"
+        class="wm-btn wm-btn-primary"
+        id="btn-add-file"
+      >
+        + Fayl qo'shish
+      </button>
+
+      <input
+        type="file"
+        id="global-file-input"
+        multiple
+        accept="image/*,video/*"
+        hidden
+      />
+
+    </div>
+
+  </header>
+
+
+  <!-- =====================================================
+       WORKSPACE
+  ====================================================== -->
+
+  <main
+    class="canvas-viewport"
+    id="viewport"
+  >
+    <aside class="tools-sidebar" aria-label="Moodboard funksiyalari">
+      <div class="tools-kicker">TOOLS</div>
+
+      <button type="button" class="tool-button" id="tool-text" title="Matn qo‘shish">
+        <span class="tool-icon">T</span>
+        <span class="tool-label">Text</span>
+      </button>
+
+      <button type="button" class="tool-button" id="tool-upload" title="Rasm yoki video qo‘shish">
+        <span class="tool-icon">▧</span>
+        <span class="tool-label">Media</span>
+      </button>
+
+      <button type="button" class="tool-button" id="tool-shape" title="To‘rtburchak qo‘shish">
+        <span class="tool-icon tool-shape-icon"></span>
+        <span class="tool-label">Shape</span>
+      </button>
+
+      <div class="tool-divider"></div>
+
+      <button type="button" class="tool-button tool-button-danger" id="tool-delete" title="Tanlangan elementni o‘chirish">
+        <span class="tool-icon">⌫</span>
+        <span class="tool-label">Delete</span>
+      </button>
+    </aside>
+
+    <div
+      class="canvas-world"
+      id="canvas-world"
+    ></div>
+
+    <div
+      class="marquee-box"
+      id="marquee-box"
+      hidden
+    ></div>
+  </main>
+
+
+  <!-- IMPORTANT:
+       Fayl nomi app.js bo'lishi kerak.
+  -->
+
+  <script src="app.js"></script>
+
+</body>
+</html>
