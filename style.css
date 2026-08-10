@@ -847,6 +847,36 @@ body {
 
 
 /* =========================================================
+   CREATOR CREDIT
+========================================================= */
+
+.creator-credit {
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  z-index: 50;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  opacity: 0.62;
+  pointer-events: none;
+  user-select: none;
+}
+
+.creator-credit a {
+  color: var(--accent);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: opacity var(--transition);
+}
+
+.creator-credit a:hover {
+  opacity: 0.78;
+  text-decoration: underline;
+}
+
+
+/* =========================================================
    MARQUEE SELECTION
 ========================================================= */
 
@@ -906,6 +936,12 @@ body {
 
   .wm-actions {
     flex-direction: column;
+  }
+
+  .creator-credit {
+    right: 10px;
+    bottom: 8px;
+    font-size: 0.6rem;
   }
 
 }
