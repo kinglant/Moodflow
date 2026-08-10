@@ -6,6 +6,10 @@
 ========================================================= */
 
 const MAX_HISTORY = 50;
+const PROJECT_STORAGE_KEY = 'moodflow.project.v1';
+const MEDIA_DB_NAME = 'moodflow-media-db';
+const MEDIA_STORE_NAME = 'media';
+const PROJECT_SCHEMA_VERSION = 1;
 
 
 /* =========================================================
@@ -69,7 +73,8 @@ const state = {
 
   // Styles
   canvasBg: '#060C10',
-  accentColor: '#00BFFF'
+  accentColor: '#00BFFF',
+  boardTitle: "Mening Moodboard'im"
 };
 
 
@@ -96,13 +101,228 @@ let welcomeCard = null;
 let settingsPanel = null;
 let accentColorPicker = null;
 let canvasColorPicker = null;
+let saveStatusEl = null;
+let saveTimer = null;
+let isHydrating = true;
+let mediaDbPromise = null;
+
+
+/* =========================================================
+   BROWSER STORAGE
+========================================================= */
+
+function setSaveStatus(text, type = '') {
+  if (!saveStatusEl) return;
+  saveStatusEl.textContent = text;
+  saveStatusEl.className = `save-status${type ? ` ${type}` : ''}`;
+}
+
+function makeMediaId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return `media-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function openMediaDb() {
+  if (mediaDbPromise) return mediaDbPromise;
+  if (!('indexedDB' in window)) {
+    return Promise.reject(new Error('IndexedDB mavjud emas.'));
+  }
+
+  mediaDbPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(MEDIA_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(MEDIA_STORE_NAME)) {
+        db.createObjectStore(MEDIA_STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  return mediaDbPromise;
+}
+
+function putMedia(id, file) {
+  return openMediaDb().then(db => new Promise((resolve, reject) => {
+    const transaction = db.transaction(MEDIA_STORE_NAME, 'readwrite');
+    transaction.objectStore(MEDIA_STORE_NAME).put({
+      id,
+      blob: file,
+      name: file.name || 'media',
+      type: file.type || 'application/octet-stream',
+      size: file.size || 0,
+      createdAt: Date.now()
+    });
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  }));
+}
+
+function getMedia(id) {
+  return openMediaDb().then(db => new Promise((resolve, reject) => {
+    const request = db.transaction(MEDIA_STORE_NAME, 'readonly')
+      .objectStore(MEDIA_STORE_NAME).get(id);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  }));
+}
+
+function getAllMedia() {
+  return openMediaDb().then(db => new Promise((resolve, reject) => {
+    const request = db.transaction(MEDIA_STORE_NAME, 'readonly')
+      .objectStore(MEDIA_STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  }));
+}
+
+function serializeProject() {
+  return {
+    schemaVersion: PROJECT_SCHEMA_VERSION,
+    savedAt: new Date().toISOString(),
+    boardTitle: state.boardTitle,
+    canvasBg: state.canvasBg,
+    accentColor: state.accentColor,
+    cards: state.cards.map(card => ({
+      id: card.id,
+      type: card.type,
+      mediaId: card.mediaId || null,
+      x: card.x,
+      y: card.y,
+      w: card.w,
+      h: card.h,
+      z: card.z,
+      aspectRatio: card.aspectRatio,
+      text: card.text,
+      fontSize: card.fontSize,
+      textColor: card.textColor,
+      fill: card.fill
+    }))
+  };
+}
+
+function persistProjectNow() {
+  if (isHydrating) return;
+  try {
+    localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(serializeProject()));
+    setSaveStatus('Saqlandi', 'saved');
+  } catch (error) {
+    console.error('MoodFlow saqlash xatosi:', error);
+    setSaveStatus('Saqlash xatosi', 'error');
+  }
+}
+
+function schedulePersist() {
+  if (isHydrating) return;
+  clearTimeout(saveTimer);
+  setSaveStatus('Saqlanmoqda...', 'saving');
+  saveTimer = setTimeout(persistProjectNow, 450);
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function downloadBackup() {
+  setSaveStatus('Backup tayyorlanmoqda...', 'saving');
+  try {
+    const project = serializeProject();
+    const records = await getAllMedia();
+    const used = new Set(project.cards.map(card => card.mediaId).filter(Boolean));
+    const media = [];
+
+    for (const record of records) {
+      if (used.has(record.id)) {
+        media.push({
+          id: record.id,
+          name: record.name,
+          type: record.type,
+          dataUrl: await blobToDataUrl(record.blob)
+        });
+      }
+    }
+
+    const blob = new Blob([
+      JSON.stringify({ ...project, media }, null, 2)
+    ], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `moodflow-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setSaveStatus('Backup yuklandi', 'saved');
+  } catch (error) {
+    console.error('MoodFlow backup xatosi:', error);
+    setSaveStatus('Backup xatosi', 'error');
+  }
+}
+
+async function restoreProject() {
+  const raw = localStorage.getItem(PROJECT_STORAGE_KEY);
+  if (!raw) {
+    isHydrating = false;
+    saveHistoryState();
+    return;
+  }
+
+  try {
+    const project = JSON.parse(raw);
+    state.boardTitle = project.boardTitle || "Mening Moodboard'im";
+    state.canvasBg = project.canvasBg || '#060C10';
+    state.accentColor = project.accentColor || '#00BFFF';
+
+    const titleInput = document.getElementById('board-title');
+    if (titleInput) titleInput.value = state.boardTitle;
+
+    state.cards = [];
+    state.selectedCard = null;
+    state.nextId = 1;
+    state.nextZ = 10;
+    if (world) world.innerHTML = '';
+    applyColors();
+
+    for (const savedCard of Array.isArray(project.cards) ? project.cards : []) {
+      const record = savedCard.mediaId
+        ? await getMedia(savedCard.mediaId)
+        : null;
+
+      if (savedCard.mediaId && (!record || !record.blob)) {
+        console.warn('Media topilmadi:', savedCard.mediaId);
+        continue;
+      }
+
+      createCardFromData({
+        ...savedCard,
+        src: record ? URL.createObjectURL(record.blob) : null,
+        el: null
+      });
+    }
+
+    historyStack = [createSnapshot()];
+    redoStack = [];
+    isHydrating = false;
+    setSaveStatus('Saqlandi', 'saved');
+  } catch (error) {
+    console.error('MoodFlow tiklash xatosi:', error);
+    isHydrating = false;
+    setSaveStatus('Tiklash xatosi', 'error');
+    saveHistoryState();
+  }
+}
 
 
 /* =========================================================
    INITIALIZATION
 ========================================================= */
 
-function init() {
+async function init() {
 
   viewport = document.getElementById('viewport');
 
@@ -124,6 +344,17 @@ function init() {
   canvasColorPicker =
     document.getElementById('canvas-color');
 
+  saveStatusEl = document.getElementById('save-status');
+
+  const boardTitleInput = document.getElementById('board-title');
+  if (boardTitleInput) {
+    state.boardTitle = boardTitleInput.value || state.boardTitle;
+    boardTitleInput.addEventListener('input', event => {
+      state.boardTitle = event.target.value;
+      schedulePersist();
+    });
+  }
+
 
   if (!viewport || !world) {
     console.error(
@@ -140,7 +371,7 @@ function init() {
 
   applyColors();
 
-  saveHistoryState();
+  await restoreProject();
 
   console.log('MoodFlow initialized successfully.');
 }
@@ -163,6 +394,7 @@ function createSnapshot() {
       h: card.h,
       z: card.z,
       aspectRatio: card.aspectRatio,
+      mediaId: card.mediaId || null,
       text: card.text,
       fontSize: card.fontSize,
       textColor: card.textColor,
@@ -170,6 +402,7 @@ function createSnapshot() {
     })),
 
     canvasBg: state.canvasBg,
+    boardTitle: state.boardTitle,
 
     accentColor: state.accentColor
   });
@@ -184,6 +417,7 @@ function saveHistoryState() {
     historyStack.length > 0 &&
     historyStack[historyStack.length - 1] === snapshot
   ) {
+    schedulePersist();
     return;
   }
 
@@ -194,6 +428,7 @@ function saveHistoryState() {
   }
 
   redoStack = [];
+  schedulePersist();
 }
 
 
@@ -249,6 +484,10 @@ function applySnapshot(snapshot) {
   state.accentColor =
     snapshot.accentColor || '#00BFFF';
 
+  state.boardTitle = snapshot.boardTitle || state.boardTitle;
+  const titleInput = document.getElementById('board-title');
+  if (titleInput) titleInput.value = state.boardTitle;
+
   applyColors();
 
   state.nextId = 1;
@@ -263,6 +502,8 @@ function applySnapshot(snapshot) {
 
     createCardFromData(restoredCard);
   });
+
+  schedulePersist();
 }
 
 
@@ -643,6 +884,12 @@ function setupEventListeners() {
   }
 
 
+  const backupButton = document.getElementById('btn-backup');
+  if (backupButton) {
+    backupButton.addEventListener('click', downloadBackup);
+  }
+
+
   const addFileButton =
     document.getElementById('btn-add-file');
 
@@ -913,6 +1160,9 @@ function handleFiles(
       const url =
         URL.createObjectURL(file);
 
+      const mediaId = makeMediaId();
+      const mediaPromise = putMedia(mediaId, file);
+
 
       const isVideo =
         file.type.startsWith(
@@ -934,7 +1184,8 @@ function handleFiles(
 
 
         video.onloadedmetadata =
-          () => {
+          async () => {
+            await mediaPromise;
 
             const aspect =
               video.videoWidth > 0 &&
@@ -953,6 +1204,7 @@ function handleFiles(
             createCard({
 
               type: 'video',
+              mediaId,
 
               src: url,
 
@@ -994,7 +1246,8 @@ function handleFiles(
         image.src = url;
 
 
-        image.onload = () => {
+        image.onload = async () => {
+          await mediaPromise;
 
           const aspect =
             image.naturalWidth > 0 &&
@@ -1013,6 +1266,7 @@ function handleFiles(
           createCard({
 
             type: 'image',
+            mediaId,
 
             src: url,
 
@@ -1122,6 +1376,9 @@ function createCard(data) {
 
     src:
       data.src,
+
+    mediaId:
+      data.mediaId || null,
 
     x:
       data.x != null
@@ -1434,6 +1691,7 @@ function createTextCard(
     'input',
     () => {
       card.text = text.textContent || '';
+      schedulePersist();
     }
   );
 
@@ -1801,7 +2059,8 @@ function deleteCard(id) {
 
   if (
     card.src &&
-    card.src.startsWith('blob:')
+    card.src.startsWith('blob:') &&
+    !card.mediaId
   ) {
 
     URL.revokeObjectURL(
@@ -2642,6 +2901,9 @@ function deselectAll() {
 /* =========================================================
    START
 ========================================================= */
+
+window.addEventListener('beforeunload', persistProjectNow);
+
 
 document.addEventListener(
   'DOMContentLoaded',

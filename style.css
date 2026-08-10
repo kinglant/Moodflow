@@ -484,6 +484,31 @@ body {
   border-color: var(--border-focus);
 }
 
+.save-status {
+  max-width: 100px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-status.saving {
+  color: var(--accent);
+}
+
+.save-status.saved {
+  color: #71e6a2;
+}
+
+.save-status.error {
+  color: #ff8b9b;
+}
+
+.backup-button {
+  font-size: 1rem;
+}
+
 
 /* =========================================================
    CANVAS VIEWPORT
@@ -924,6 +949,10 @@ body {
 
   .header-right {
     gap: 0.5rem;
+  }
+
+  .save-status {
+    max-width: 70px;
   }
 
   .wm-btn {
