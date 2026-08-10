@@ -85,6 +85,41 @@
 
 
   <!-- =====================================================
+       SAVED PROJECTS PANEL
+  ====================================================== -->
+
+  <div
+    class="projects-modal-backdrop"
+    id="projects-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="projects-title"
+  >
+    <div class="projects-modal-card" id="projects-card">
+      <div class="projects-modal-header">
+        <div>
+          <div class="projects-kicker">MOODFLOW</div>
+          <h1 class="projects-title" id="projects-title">Saqlanganlar</h1>
+          <p class="projects-subtitle">Brauzerda saqlangan moodboard loyihalaringiz.</p>
+        </div>
+        <button type="button" class="btn-icon projects-close" id="projects-close" title="Yopish" aria-label="Saqlanganlar panelini yopish">✕</button>
+      </div>
+
+      <div class="projects-list" id="projects-list" aria-live="polite"></div>
+
+      <div class="projects-empty hidden" id="projects-empty">
+        Hali saqlangan loyiha yo‘q. Yangi moodboard yaratib boshlang.
+      </div>
+
+      <div class="projects-actions">
+        <button type="button" class="wm-btn wm-btn-primary" id="project-new">+ Yangi moodboard</button>
+        <button type="button" class="wm-btn wm-btn-ghost" id="project-close-secondary">Hozirgi loyihani ochish</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =====================================================
        HEADER
   ====================================================== -->
 
@@ -148,6 +183,16 @@
     <div class="header-right">
 
       <!-- SETTINGS -->
+
+      <button
+        type="button"
+        class="btn-icon"
+        id="btn-projects"
+        title="Saqlangan loyihalar"
+        aria-label="Saqlangan loyihalar"
+      >
+        ▦
+      </button>
 
       <div class="settings-wrap">
 

@@ -7,9 +7,11 @@
 
 const MAX_HISTORY = 50;
 const PROJECT_STORAGE_KEY = 'moodflow.project.v1';
+const PROJECT_LIST_STORAGE_KEY = 'moodflow.projects.v1';
+const PROJECT_SCHEMA_VERSION = 1;
+const PROJECT_LIST_SCHEMA_VERSION = 1;
 const MEDIA_DB_NAME = 'moodflow-media-db';
 const MEDIA_STORE_NAME = 'media';
-const PROJECT_SCHEMA_VERSION = 1;
 
 
 /* =========================================================
@@ -97,6 +99,11 @@ let fileInput = null;
 
 let welcomeModal = null;
 let welcomeCard = null;
+
+let projectsModal = null;
+let projectsListEl = null;
+let projectsEmptyEl = null;
+let activeProjectId = null;
 
 let settingsPanel = null;
 let accentColorPicker = null;
@@ -202,11 +209,91 @@ function serializeProject() {
   };
 }
 
+function makeProjectId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return `project-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getProjectPayloadKey(projectId) {
+  return `moodflow.project.saved.${projectId}.v1`;
+}
+
+function readProjectList() {
+  try {
+    const raw = localStorage.getItem(PROJECT_LIST_STORAGE_KEY);
+    if (!raw) return { schemaVersion: PROJECT_LIST_SCHEMA_VERSION, activeProjectId: null, projects: [] };
+    const parsed = JSON.parse(raw);
+    const projects = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsed.projects) ? parsed.projects : [];
+    return {
+      schemaVersion: PROJECT_LIST_SCHEMA_VERSION,
+      activeProjectId: parsed && !Array.isArray(parsed) ? parsed.activeProjectId || null : null,
+      projects: projects.filter(project => project && project.id)
+    };
+  } catch (error) {
+    console.warn('MoodFlow loyihalar ro‘yxatini o‘qib bo‘lmadi:', error);
+    return { schemaVersion: PROJECT_LIST_SCHEMA_VERSION, activeProjectId: null, projects: [] };
+  }
+}
+
+function writeProjectList(projectList) {
+  localStorage.setItem(PROJECT_LIST_STORAGE_KEY, JSON.stringify({
+    schemaVersion: PROJECT_LIST_SCHEMA_VERSION,
+    activeProjectId: projectList.activeProjectId || null,
+    projects: projectList.projects
+  }));
+}
+
+function setActiveProject(projectId) {
+  activeProjectId = projectId;
+  const projectList = readProjectList();
+  projectList.activeProjectId = projectId;
+  writeProjectList(projectList);
+}
+
+function upsertProjectMetadata(project, savedAt = project.savedAt) {
+  const projectList = readProjectList();
+  if (!activeProjectId) activeProjectId = makeProjectId();
+  const existing = projectList.projects.find(item => item.id === activeProjectId);
+  const metadata = {
+    id: activeProjectId,
+    title: project.boardTitle || "Mening Moodboard'im",
+    savedAt: savedAt || new Date().toISOString(),
+    cardCount: Array.isArray(project.cards) ? project.cards.length : 0
+  };
+  if (existing) Object.assign(existing, metadata);
+  else projectList.projects.push(metadata);
+  projectList.activeProjectId = activeProjectId;
+  writeProjectList(projectList);
+}
+
+function registerCurrentProject() {
+  const projectList = readProjectList();
+  activeProjectId = projectList.activeProjectId;
+  if (!activeProjectId || !projectList.projects.some(project => project.id === activeProjectId)) {
+    activeProjectId = makeProjectId();
+  }
+  const project = serializeProject();
+  upsertProjectMetadata(project, project.savedAt);
+  try {
+    localStorage.setItem(getProjectPayloadKey(activeProjectId), JSON.stringify(project));
+  } catch (error) {
+    console.warn('MoodFlow loyihasini ro‘yxatga yozib bo‘lmadi:', error);
+  }
+}
+
 function persistProjectNow() {
   if (isHydrating) return;
   try {
-    localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(serializeProject()));
+    const project = serializeProject();
+    localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(project));
+    if (activeProjectId) {
+      localStorage.setItem(getProjectPayloadKey(activeProjectId), JSON.stringify(project));
+      upsertProjectMetadata(project, project.savedAt);
+    }
     setSaveStatus('Saqlandi', 'saved');
+    renderProjectsPanel();
   } catch (error) {
     console.error('MoodFlow saqlash xatosi:', error);
     setSaveStatus('Saqlash xatosi', 'error');
@@ -264,56 +351,62 @@ async function downloadBackup() {
   }
 }
 
+async function restoreProjectData(project) {
+  state.boardTitle = project.boardTitle || "Mening Moodboard'im";
+  state.canvasBg = project.canvasBg || '#060C10';
+  state.accentColor = project.accentColor || '#00BFFF';
+
+  const titleInput = document.getElementById('board-title');
+  if (titleInput) titleInput.value = state.boardTitle;
+
+  state.cards = [];
+  state.selectedCard = null;
+  state.nextId = 1;
+  state.nextZ = 10;
+  if (world) world.innerHTML = '';
+  applyColors();
+
+  for (const savedCard of Array.isArray(project.cards) ? project.cards : []) {
+    const record = savedCard.mediaId
+      ? await getMedia(savedCard.mediaId)
+      : null;
+
+    if (savedCard.mediaId && (!record || !record.blob)) {
+      console.warn('Media topilmadi:', savedCard.mediaId);
+      continue;
+    }
+
+    createCardFromData({
+      ...savedCard,
+      src: record ? URL.createObjectURL(record.blob) : null,
+      el: null
+    });
+  }
+
+  historyStack = [createSnapshot()];
+  redoStack = [];
+}
+
 async function restoreProject() {
   const raw = localStorage.getItem(PROJECT_STORAGE_KEY);
   if (!raw) {
     isHydrating = false;
     saveHistoryState();
+    registerCurrentProject();
     return;
   }
 
   try {
-    const project = JSON.parse(raw);
-    state.boardTitle = project.boardTitle || "Mening Moodboard'im";
-    state.canvasBg = project.canvasBg || '#060C10';
-    state.accentColor = project.accentColor || '#00BFFF';
-
-    const titleInput = document.getElementById('board-title');
-    if (titleInput) titleInput.value = state.boardTitle;
-
-    state.cards = [];
-    state.selectedCard = null;
-    state.nextId = 1;
-    state.nextZ = 10;
-    if (world) world.innerHTML = '';
-    applyColors();
-
-    for (const savedCard of Array.isArray(project.cards) ? project.cards : []) {
-      const record = savedCard.mediaId
-        ? await getMedia(savedCard.mediaId)
-        : null;
-
-      if (savedCard.mediaId && (!record || !record.blob)) {
-        console.warn('Media topilmadi:', savedCard.mediaId);
-        continue;
-      }
-
-      createCardFromData({
-        ...savedCard,
-        src: record ? URL.createObjectURL(record.blob) : null,
-        el: null
-      });
-    }
-
-    historyStack = [createSnapshot()];
-    redoStack = [];
+    await restoreProjectData(JSON.parse(raw));
     isHydrating = false;
+    registerCurrentProject();
     setSaveStatus('Saqlandi', 'saved');
   } catch (error) {
     console.error('MoodFlow tiklash xatosi:', error);
     isHydrating = false;
     setSaveStatus('Tiklash xatosi', 'error');
     saveHistoryState();
+    registerCurrentProject();
   }
 }
 
@@ -346,6 +439,10 @@ async function init() {
 
   saveStatusEl = document.getElementById('save-status');
 
+  projectsModal = document.getElementById('projects-modal');
+  projectsListEl = document.getElementById('projects-list');
+  projectsEmptyEl = document.getElementById('projects-empty');
+
   const boardTitleInput = document.getElementById('board-title');
   if (boardTitleInput) {
     state.boardTitle = boardTitleInput.value || state.boardTitle;
@@ -372,6 +469,8 @@ async function init() {
   applyColors();
 
   await restoreProject();
+  renderProjectsPanel();
+  openProjectsModal();
 
   console.log('MoodFlow initialized successfully.');
 }
@@ -534,6 +633,150 @@ function applyColors() {
     canvasColorPicker.value =
       state.canvasBg;
   }
+}
+
+
+/* =========================================================
+   SAVED PROJECTS
+========================================================= */
+
+function formatProjectDate(value) {
+  if (!value) return 'Sana noma’lum';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Sana noma’lum';
+  return new Intl.DateTimeFormat('uz-UZ', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(date);
+}
+
+function openProjectsModal() {
+  if (!projectsModal) return;
+  renderProjectsPanel();
+  if (welcomeModal) closeWelcomeModal();
+  projectsModal.classList.remove('hidden');
+}
+
+function closeProjectsModal() {
+  if (projectsModal) projectsModal.classList.add('hidden');
+}
+
+function renderProjectsPanel() {
+  if (!projectsListEl || !projectsEmptyEl) return;
+  const projectList = readProjectList();
+  projectsListEl.innerHTML = '';
+  projectsEmptyEl.classList.toggle('hidden', projectList.projects.length > 0);
+
+  projectList.projects
+    .slice()
+    .sort((a, b) => new Date(b.savedAt || 0) - new Date(a.savedAt || 0))
+    .forEach(project => {
+      const item = document.createElement('article');
+      item.className = `project-item${project.id === activeProjectId ? ' current' : ''}`;
+
+      const info = document.createElement('div');
+      info.className = 'project-item-info';
+
+      const title = document.createElement('div');
+      title.className = 'project-item-title';
+      title.textContent = project.title || "Mening Moodboard'im";
+
+      const meta = document.createElement('div');
+      meta.className = 'project-item-meta';
+      meta.textContent = `${project.id === activeProjectId ? 'Hozirgi loyiha · ' : ''}${project.cardCount || 0} ta element · ${formatProjectDate(project.savedAt)}`;
+
+      info.append(title, meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'project-item-actions';
+
+      const openButton = document.createElement('button');
+      openButton.type = 'button';
+      openButton.className = 'project-open-btn';
+      openButton.textContent = 'Ochish';
+      openButton.addEventListener('click', () => openSavedProject(project.id));
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'project-delete-btn';
+      deleteButton.textContent = 'O‘chirish';
+      deleteButton.addEventListener('click', () => deleteSavedProject(project.id));
+
+      actions.append(openButton, deleteButton);
+      item.append(info, actions);
+      projectsListEl.appendChild(item);
+    });
+}
+
+async function openSavedProject(projectId) {
+  const project = readProjectList().projects.find(item => item.id === projectId);
+  if (!project) return;
+
+  const payload = localStorage.getItem(getProjectPayloadKey(projectId));
+  if (!payload) {
+    alert('Bu loyiha ma’lumotlari topilmadi.');
+    return;
+  }
+
+  try {
+    isHydrating = true;
+    setActiveProject(projectId);
+    await restoreProjectData(JSON.parse(payload));
+    localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(serializeProject()));
+    isHydrating = false;
+    setSaveStatus('Saqlandi', 'saved');
+    closeProjectsModal();
+    renderProjectsPanel();
+  } catch (error) {
+    console.error('MoodFlow loyihani ochish xatosi:', error);
+    isHydrating = false;
+    setSaveStatus('Ochish xatosi', 'error');
+  }
+}
+
+function createNewProject() {
+  persistProjectNow();
+  activeProjectId = makeProjectId();
+  isHydrating = true;
+  state.cards = [];
+  state.selectedCard = null;
+  state.nextId = 1;
+  state.nextZ = 10;
+  state.panX = 0;
+  state.panY = 0;
+  state.zoom = 1;
+  state.boardTitle = "Mening Moodboard'im";
+  state.canvasBg = '#060C10';
+  state.accentColor = '#00BFFF';
+  if (world) world.innerHTML = '';
+  const titleInput = document.getElementById('board-title');
+  if (titleInput) titleInput.value = state.boardTitle;
+  historyStack = [createSnapshot()];
+  redoStack = [];
+  applyColors();
+  isHydrating = false;
+  persistProjectNow();
+  closeProjectsModal();
+}
+
+function deleteSavedProject(projectId) {
+  const projectList = readProjectList();
+  const project = projectList.projects.find(item => item.id === projectId);
+  if (!project) return;
+  if (!window.confirm(`“${project.title || "Mening Moodboard'im"}” loyihasini o‘chirishni tasdiqlaysizmi?`)) return;
+
+  projectList.projects = projectList.projects.filter(item => item.id !== projectId);
+  localStorage.removeItem(getProjectPayloadKey(projectId));
+
+  const wasActiveProject = projectId === activeProjectId;
+  if (wasActiveProject) {
+    activeProjectId = makeProjectId();
+    projectList.activeProjectId = activeProjectId;
+  }
+
+  writeProjectList(projectList);
+  if (wasActiveProject) registerCurrentProject();
+  renderProjectsPanel();
 }
 
 
@@ -770,6 +1013,44 @@ function setupEventListeners() {
         }
       }
     );
+  }
+
+
+  /* -------------------------------------------------------
+     SAVED PROJECTS PANEL
+  ------------------------------------------------------- */
+
+  const projectsButton = document.getElementById('btn-projects');
+  const projectsCloseButton = document.getElementById('projects-close');
+  const projectsSecondaryCloseButton = document.getElementById('project-close-secondary');
+  const newProjectButton = document.getElementById('project-new');
+
+  if (projectsButton) {
+    projectsButton.addEventListener('click', openProjectsModal);
+  }
+
+  if (projectsCloseButton) {
+    projectsCloseButton.addEventListener('click', closeProjectsModal);
+  }
+
+  if (projectsSecondaryCloseButton) {
+    projectsSecondaryCloseButton.addEventListener('click', closeProjectsModal);
+  }
+
+  if (newProjectButton) {
+    newProjectButton.addEventListener('click', createNewProject);
+  }
+
+  if (projectsModal) {
+    projectsModal.addEventListener('click', event => {
+      if (event.target === projectsModal) closeProjectsModal();
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !projectsModal.classList.contains('hidden')) {
+        closeProjectsModal();
+      }
+    });
   }
 
 
