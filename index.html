@@ -211,151 +211,31 @@
           id="settings-panel"
         >
 
-          <h3>Sozlamalar</h3>
-          <p class="settings-intro">
-            MoodFlow’dan foydalanish bo‘yicha qisqa va amaliy qo‘llanma.
-          </p>
+          <h3>Sozlamalar (RGB Panel)</h3>
 
-          <section class="settings-section">
-            <h4>🎨 Ko‘rinish</h4>
+          <div class="color-picker-row">
+            <label for="accent-color">
+              Asosiy Rang (Accent):
+            </label>
 
-            <div class="color-picker-row">
-              <label for="accent-color">
-                Asosiy rang:
-              </label>
+            <input
+              type="color"
+              id="accent-color"
+              value="#00BFFF"
+            />
+          </div>
 
-              <input
-                type="color"
-                id="accent-color"
-                value="#00BFFF"
-              />
-            </div>
+          <div class="color-picker-row">
+            <label for="canvas-color">
+              Canvas Orqa Foni:
+            </label>
 
-            <div class="color-picker-row">
-              <label for="canvas-color">
-                Canvas foni:
-              </label>
-
-              <input
-                type="color"
-                id="canvas-color"
-                value="#060C10"
-              />
-            </div>
-
-            <p class="settings-note">
-              Yuqoridagi ranglar avtomatik saqlanadi. 🌙 tugmasi orqali
-              qorong‘i va yorug‘ mavzuni almashtirasiz.
-            </p>
-          </section>
-
-          <section class="settings-section settings-help">
-            <h4>🧭 Ishlash tartibi</h4>
-
-            <div class="help-item">
-              <strong>1. Obyekt qo‘shish</strong>
-              <p>
-                <b>+ Fayl qo‘shish</b> tugmasini bosing va rasm, video yoki
-                GIF fayl tanlang. Fayl canvas markaziga joylashadi.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>2. Obyektni tanlash va ko‘chirish</strong>
-              <p>
-                Obyektni <b>chap sichqoncha tugmasi</b> bilan bosing.
-                Belgilangan obyektni yana chap tugma bilan ushlab, kerakli
-                joyga sudrang.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>3. Bir nechta obyektni belgilash</strong>
-              <p>
-                Canvasdagi bo‘sh joydan chap tugma bilan bosib, sichqonchani
-                sudrang. Hosil bo‘lgan to‘rtburchak ichiga kirgan obyektlar
-                birgalikda belgilanadi.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>4. O‘lchamni o‘zgartirish</strong>
-              <p>
-                Belgilangan obyektning pastki o‘ng burchagidagi nuqtani
-                sudrang. <b>Shift</b> tugmasini bosib tursangiz, proporsiya
-                saqlanadi.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>5. Matn bilan ishlash</strong>
-              <p>
-                Matn obyektini chap tugma bilan sudrab ko‘chiring.
-                Matnni tahrirlash uchun uning ustiga <b>ikki marta</b> bosing.
-                Tahrirlashni tugatgach, tashqariga bosing.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>6. Canvasni surish va masshtablash</strong>
-              <p>
-                Sichqonchaning <b>o‘rta tugmasi</b> bilan canvasni suring.
-                Obyektlar bu rejimda ko‘chmaydi. Sichqoncha g‘ildiragini
-                aylantirib canvasni kattalashtiring yoki kichraytiring.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>7. Tanlangan obyektlarni kvadratga taxlash</strong>
-              <p>
-                Avval bir nechta obyektni belgilang. Belgilangan obyektlardan
-                birining ustida <b>PKM, o‘ng tugma</b> bosing. Menyudan
-                <b>“Kvadratga taxlash”</b>ni tanlang. Obyektlar yaqin gridga
-                joylashadi va ularni qamrab oladigan kvadrat shape orqada
-                paydo bo‘ladi.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>8. Obyektni o‘chirish</strong>
-              <p>
-                Obyektni tanlang va klaviaturadagi <b>Delete</b> tugmasini
-                bosing. Obyekt ichidagi ✕ tugmasidan ham foydalanishingiz
-                mumkin.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>9. Bekor qilish va qaytarish</strong>
-              <p>
-                Oxirgi amalni bekor qilish uchun <b>Ctrl + Z</b>, qaytarish
-                uchun <b>Ctrl + Y</b> yoki <b>Ctrl + Shift + Z</b> bosing.
-              </p>
-            </div>
-
-            <div class="help-item">
-              <strong>10. Saqlash va backup</strong>
-              <p>
-                O‘zgarishlar brauzer ichida avtomatik saqlanadi. 💾 tugmasi
-                orqali loyiha backup faylini yuklab oling. ▦ tugmasi orqali
-                saqlangan moodboardlarni oching yoki yangi loyiha yarating.
-              </p>
-            </div>
-          </section>
-
-          <section class="settings-section settings-shortcuts">
-            <h4>⌨️ Tezkor tugmalar</h4>
-            <div class="shortcut-row"><span>Bekor qilish</span><kbd>Ctrl + Z</kbd></div>
-            <div class="shortcut-row"><span>Qaytarish</span><kbd>Ctrl + Y</kbd></div>
-            <div class="shortcut-row"><span>Tanlangan obyektni o‘chirish</span><kbd>Delete</kbd></div>
-            <div class="shortcut-row"><span>Canvasni surish</span><kbd>O‘rta tugma</kbd></div>
-            <div class="shortcut-row"><span>Matnni tahrirlash</span><kbd>Ikki marta bosish</kbd></div>
-          </section>
-
-          <p class="settings-footer">
-            Maslahat: avval obyektlarni marquee bilan belgilang, keyin PKM
-            orqali “Kvadratga taxlash”dan foydalaning.
-          </p>
+            <input
+              type="color"
+              id="canvas-color"
+              value="#060C10"
+            />
+          </div>
 
         </div>
 

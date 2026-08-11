@@ -425,17 +425,14 @@ body {
   right: 0;
   top: 45px;
 
-  width: min(390px, calc(100vw - 24px));
-  max-height: min(720px, calc(100vh - 76px));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-
   background: var(--bg-surface);
 
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
 
   padding: 1rem;
+
+  width: 260px;
 
   box-shadow: var(--shadow-lg);
 
@@ -451,90 +448,9 @@ body {
 }
 
 .settings-dropdown h3 {
-  font-size: 1rem;
-  margin-bottom: 0;
-  color: var(--text-primary);
-  font-family: var(--font-display);
-}
-
-.settings-intro {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
   color: var(--text-secondary);
-  font-size: 0.74rem;
-  line-height: 1.45;
-}
-
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.settings-section h4 {
-  color: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.settings-note,
-.settings-footer {
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  line-height: 1.45;
-}
-
-.help-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  padding: 0.52rem 0.62rem;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-
-.help-item strong {
-  color: var(--text-primary);
-  font-size: 0.74rem;
-}
-
-.help-item p {
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  line-height: 1.48;
-}
-
-.help-item b {
-  color: var(--text-primary);
-}
-
-.shortcut-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-}
-
-.shortcut-row kbd {
-  flex: 0 0 auto;
-  padding: 0.2rem 0.42rem;
-  color: var(--text-primary);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-focus);
-  border-radius: 5px;
-  font-family: var(--font-main);
-  font-size: 0.64rem;
-  white-space: nowrap;
-}
-
-.settings-footer {
-  padding: 0.62rem;
-  color: var(--accent);
-  background: rgba(0, 191, 255, 0.08);
-  border-radius: var(--radius-sm);
 }
 
 .color-picker-row {
