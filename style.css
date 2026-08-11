@@ -1060,6 +1060,38 @@ body {
    CREATOR CREDIT
 ========================================================= */
 
+.canvas-context-menu {
+  position: absolute;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1200;
+}
+
+.canvas-context-menu[hidden] {
+  display: none;
+}
+
+.canvas-context-menu button {
+  width: 100%;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.canvas-context-menu button:hover {
+  background: var(--bg-elevated);
+  color: var(--accent);
+}
+
 .creator-credit {
   position: absolute;
   right: 18px;

@@ -101,6 +101,8 @@ let redoStack = [];
 let viewport = null;
 let world = null;
 let marqueeEl = null;
+let contextMenuEl = null;
+let arrangeSelectedButton = null;
 let fileInput = null;
 
 let welcomeModal = null;
@@ -210,7 +212,8 @@ function serializeProject() {
       text: card.text,
       fontSize: card.fontSize,
       textColor: card.textColor,
-      fill: card.fill
+      fill: card.fill,
+      autoArrangeFrame: card.autoArrangeFrame === true
     }))
   };
 }
@@ -428,6 +431,8 @@ async function init() {
   world = document.getElementById('canvas-world');
 
   marqueeEl = document.getElementById('marquee-box');
+  contextMenuEl = document.getElementById('canvas-context-menu');
+  arrangeSelectedButton = document.getElementById('arrange-selected-action');
 
   fileInput = document.getElementById('global-file-input');
 
@@ -503,7 +508,8 @@ function createSnapshot() {
       text: card.text,
       fontSize: card.fontSize,
       textColor: card.textColor,
-      fill: card.fill
+      fill: card.fill,
+      autoArrangeFrame: card.autoArrangeFrame === true
     })),
 
     canvasBg: state.canvasBg,
@@ -1298,6 +1304,57 @@ function setupEventListeners() {
         }
       }
     );
+
+    viewport.addEventListener(
+      'contextmenu',
+      event => {
+        event.preventDefault();
+
+        const selectedCards = getSelectedCards();
+        const cardElement = event.target.closest
+          ? event.target.closest('.card-element')
+          : null;
+
+        if (
+          !selectedCards.length ||
+          !cardElement ||
+          !cardElement.classList.contains('selected')
+        ) {
+          hideCanvasContextMenu();
+          return;
+        }
+
+        showCanvasContextMenu(
+          event.clientX,
+          event.clientY
+        );
+      }
+    );
+
+    viewport.addEventListener(
+      'mousedown',
+      event => {
+        if (
+          contextMenuEl &&
+          !contextMenuEl.hidden &&
+          !contextMenuEl.contains(event.target)
+        ) {
+          hideCanvasContextMenu();
+        }
+      }
+    );
+  }
+
+  if (arrangeSelectedButton) {
+    arrangeSelectedButton.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        event.stopPropagation();
+        arrangeSelectedCards();
+        hideCanvasContextMenu();
+      }
+    );
   }
 
 
@@ -1722,6 +1779,9 @@ function createCard(data) {
     fill:
       data.fill || 'rgba(0, 191, 255, 0.18)',
 
+    autoArrangeFrame:
+      data.autoArrangeFrame === true,
+
     el: null
   };
 
@@ -1753,7 +1813,9 @@ function createCard(data) {
   selectCard(card);
 
 
-  saveHistoryState();
+  if (!data.skipHistory) {
+    saveHistoryState();
+  }
 }
 
 
@@ -1771,6 +1833,7 @@ function createCardFromData(
     fontSize: data.fontSize || 36,
     textColor: data.textColor || 'var(--text-primary)',
     fill: data.fill || 'rgba(0, 191, 255, 0.18)',
+    autoArrangeFrame: data.autoArrangeFrame === true,
     el: null
   };
 
@@ -1816,6 +1879,10 @@ function createCardDOM(card) {
 
   element.dataset.id =
     String(card.id);
+
+  if (card.autoArrangeFrame) {
+    element.dataset.autoArrangeFrame = 'true';
+  }
 
 
   card.el =
@@ -2347,6 +2414,202 @@ function createVideoCard(
    DELETE CARD
 ========================================================= */
 
+function getSelectedCards() {
+  if (!world) {
+    return [];
+  }
+
+  return Array.from(
+    world.querySelectorAll('.card-element.selected')
+  )
+    .map(element => {
+      const id = Number(element.dataset.id);
+      return state.cards.find(card => card.id === id);
+    })
+    .filter(card => {
+      if (!card) {
+        return false;
+      }
+
+      return !card.autoArrangeFrame;
+    });
+}
+
+
+function showCanvasContextMenu(clientX, clientY) {
+  if (!contextMenuEl || !viewport) {
+    return;
+  }
+
+  const viewportRect =
+    viewport.getBoundingClientRect();
+  const menuWidth = 210;
+  const menuHeight = 52;
+  const maxLeft = Math.max(
+    8,
+    viewportRect.width - menuWidth - 8
+  );
+  const maxTop = Math.max(
+    8,
+    viewportRect.height - menuHeight - 8
+  );
+
+  contextMenuEl.style.left = `${Math.min(
+    Math.max(8, clientX - viewportRect.left),
+    maxLeft
+  )}px`;
+  contextMenuEl.style.top = `${Math.min(
+    Math.max(8, clientY - viewportRect.top),
+    maxTop
+  )}px`;
+  contextMenuEl.hidden = false;
+}
+
+
+function hideCanvasContextMenu() {
+  if (contextMenuEl) {
+    contextMenuEl.hidden = true;
+  }
+}
+
+
+function arrangeSelectedCards() {
+  const selectedCards = getSelectedCards();
+  if (selectedCards.length === 0) {
+    return;
+  }
+
+  const gap = 24;
+  const padding = 28;
+  const columns = Math.ceil(
+    Math.sqrt(selectedCards.length)
+  );
+  const rows = Math.ceil(
+    selectedCards.length / columns
+  );
+  const cellWidth = Math.max(
+    ...selectedCards.map(card => card.w)
+  );
+  const cellHeight = Math.max(
+    ...selectedCards.map(card => card.h)
+  );
+  const groupLeft = Math.min(
+    ...selectedCards.map(card => card.x)
+  );
+  const groupTop = Math.min(
+    ...selectedCards.map(card => card.y)
+  );
+  const groupRight = Math.max(
+    ...selectedCards.map(card => card.x + card.w)
+  );
+  const groupBottom = Math.max(
+    ...selectedCards.map(card => card.y + card.h)
+  );
+  const groupCenterX =
+    (groupLeft + groupRight) / 2;
+  const groupCenterY =
+    (groupTop + groupBottom) / 2;
+  const contentWidth =
+    columns * cellWidth +
+    (columns - 1) * gap;
+  const contentHeight =
+    rows * cellHeight +
+    (rows - 1) * gap;
+  const squareSize = Math.max(
+    contentWidth,
+    contentHeight
+  ) + padding * 2;
+  const squareLeft =
+    groupCenterX - squareSize / 2;
+  const squareTop =
+    groupCenterY - squareSize / 2;
+  const contentLeft =
+    squareLeft +
+    (squareSize - contentWidth) / 2;
+  const contentTop =
+    squareTop +
+    (squareSize - contentHeight) / 2;
+
+  selectedCards.forEach((card, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const cellLeft =
+      contentLeft +
+      column * (cellWidth + gap);
+    const cellTop =
+      contentTop +
+      row * (cellHeight + gap);
+
+    card.x =
+      cellLeft +
+      (cellWidth - card.w) / 2;
+    card.y =
+      cellTop +
+      (cellHeight - card.h) / 2;
+
+    renderCardStyle(card.el, card);
+  });
+
+  const selectedMaxZ = Math.max(
+    ...selectedCards.map(card => card.z)
+  );
+  const shapeZ = Math.min(
+    selectedMaxZ - 1,
+    ...state.cards
+      .filter(card => !selectedCards.includes(card))
+      .map(card => card.z)
+  );
+  const existingShape = state.cards.find(card =>
+    card.type === 'shape' &&
+    card.el &&
+    card.el.dataset.autoArrangeFrame === 'true'
+  );
+
+  if (existingShape) {
+    existingShape.autoArrangeFrame = true;
+    existingShape.x = squareLeft;
+    existingShape.y = squareTop;
+    existingShape.w = squareSize;
+    existingShape.h = squareSize;
+    existingShape.z = shapeZ;
+    renderCardStyle(existingShape.el, existingShape);
+  } else {
+    createCard({
+      type: 'shape',
+      fill: 'rgba(0, 191, 255, 0.08)',
+      x: squareLeft,
+      y: squareTop,
+      w: squareSize,
+      h: squareSize,
+      z: shapeZ,
+      aspectRatio: 1,
+      autoArrangeFrame: true,
+      skipHistory: true
+    });
+
+    const frame = state.cards[state.cards.length - 1];
+    if (frame) {
+      frame.autoArrangeFrame = true;
+    }
+
+    if (frame && frame.el) {
+      frame.el.dataset.autoArrangeFrame = 'true';
+      frame.el.classList.remove('selected');
+    }
+  }
+
+  selectedCards.forEach(card => {
+    if (card.el) {
+      card.el.classList.add('selected');
+    }
+  });
+
+  state.selectedCard =
+    selectedCards[0] || null;
+  saveHistoryState();
+}
+
+
 function deleteCard(id) {
 
   const card =
@@ -2533,6 +2796,15 @@ function onPointerDown(event) {
     event.target.closest &&
     event.target.closest(
       '.tools-sidebar'
+    )
+  ) {
+    return;
+  }
+
+  if (
+    event.target.closest &&
+    event.target.closest(
+      '.canvas-context-menu'
     )
   ) {
     return;
