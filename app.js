@@ -45,6 +45,12 @@ const state = {
   // Card dragging
   isDragging: false,
   dragCard: null,
+  dragPending: false,
+  pendingDragCard: null,
+  pendingDragStart: {
+    x: 0,
+    y: 0
+  },
 
   dragOffset: {
     x: 0,
@@ -1283,6 +1289,15 @@ function setupEventListeners() {
         passive: false
       }
     );
+
+    viewport.addEventListener(
+      'auxclick',
+      event => {
+        if (event.button === 1) {
+          event.preventDefault();
+        }
+      }
+    );
   }
 
 
@@ -1975,7 +1990,7 @@ function createTextCard(
   );
 
   text.addEventListener(
-    'pointerdown',
+    'mousedown',
     event => {
       if (
         text.contentEditable === 'true' &&
@@ -2646,17 +2661,7 @@ function onPointerDown(event) {
 
 
     selectCard(card);
-
     bringToFront(card);
-
-
-    state.isDragging =
-      true;
-
-
-    state.dragCard =
-      card;
-
 
     const canvasPoint =
       screenToCanvas(
@@ -2664,18 +2669,25 @@ function onPointerDown(event) {
         event.clientY
       );
 
-
     state.dragOffset = {
-
       x:
         canvasPoint.x -
         card.x,
-
       y:
         canvasPoint.y -
         card.y
     };
 
+    state.pendingDragCard =
+      card;
+    state.dragPending =
+      true;
+    state.pendingDragStart = {
+      x:
+        event.clientX,
+      y:
+        event.clientY
+    };
 
     event.preventDefault();
 
@@ -2814,6 +2826,30 @@ function onPointerMove(event) {
   /* -------------------------------------------------------
      CARD DRAG
   ------------------------------------------------------- */
+
+  if (
+    state.dragPending &&
+    state.pendingDragCard
+  ) {
+    const distance =
+      Math.hypot(
+        event.clientX - state.pendingDragStart.x,
+        event.clientY - state.pendingDragStart.y
+      );
+
+    if (distance < 4) {
+      return;
+    }
+
+    state.isDragging =
+      true;
+    state.dragCard =
+      state.pendingDragCard;
+    state.dragPending =
+      false;
+    state.pendingDragCard =
+      null;
+  }
 
   if (
     state.isDragging &&
@@ -3057,6 +3093,11 @@ function onPointerUp() {
   state.isDragging =
     false;
 
+  state.dragPending =
+    false;
+
+  state.pendingDragCard =
+    null;
 
   state.dragCard =
     null;
