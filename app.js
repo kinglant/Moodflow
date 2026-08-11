@@ -1945,7 +1945,7 @@ function createTextCard(
     'text-content';
 
   text.contentEditable =
-    'true';
+    'false';
 
   text.spellcheck =
     false;
@@ -1960,11 +1960,29 @@ function createTextCard(
     card.textColor || 'var(--text-primary)';
 
   text.addEventListener(
-    'mousedown',
+    'dblclick',
     event => {
+      if (event.button !== 0) {
+        return;
+      }
+
+      event.preventDefault();
       event.stopPropagation();
-      selectCard(card);
-      bringToFront(card);
+      text.contentEditable =
+        'true';
+      text.focus();
+    }
+  );
+
+  text.addEventListener(
+    'pointerdown',
+    event => {
+      if (
+        text.contentEditable === 'true' &&
+        event.button === 0
+      ) {
+        event.stopPropagation();
+      }
     }
   );
 
@@ -1980,6 +1998,9 @@ function createTextCard(
     'blur',
     () => {
       card.text = text.textContent || '';
+      text.contentEditable =
+        'false';
+      schedulePersist();
       saveHistoryState();
     }
   );
@@ -2503,13 +2524,44 @@ function onPointerDown(event) {
   }
 
 
+  if (event.button === 1) {
+    event.preventDefault();
+
+    state.isPanning =
+      true;
+
+    state.panStart = {
+      x:
+        event.clientX,
+      y:
+        event.clientY
+    };
+
+    state.panStartOffset = {
+      x:
+        state.panX,
+      y:
+        state.panY
+    };
+
+    if (viewport) {
+      viewport.style.cursor =
+        'grabbing';
+    }
+
+    return;
+  }
+
+  if (event.button !== 0) {
+    return;
+  }
+
   const cardElement =
     event.target.closest
       ? event.target.closest(
           '.card-element'
         )
       : null;
-
 
   const isResizer =
     event.target.classList &&

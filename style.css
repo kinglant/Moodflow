@@ -872,6 +872,10 @@ body {
   box-shadow: none;
 }
 
+.card-element.text-card.selected {
+  border-color: transparent;
+}
+
 .card-element.shape-card {
   background: rgba(0, 191, 255, 0.18);
   border: 2px solid var(--accent);
@@ -890,13 +894,18 @@ body {
   line-height: 1.08;
   white-space: pre-wrap;
   word-break: break-word;
+  cursor: grab;
+  user-select: none;
+}
+
+.text-content[contenteditable="true"] {
   cursor: text;
   user-select: text;
 }
 
 .text-content:focus {
-  border-radius: var(--radius-md);
-  background: rgba(0, 191, 255, 0.08);
+  border-radius: 0;
+  background: transparent;
 }
 
 .card-element img,
